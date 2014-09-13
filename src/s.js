@@ -340,6 +340,7 @@
                     [ { ssx: 0, ssy: 0, duration: 400 },
                       { ssx: 7, ssy: 0, duration: 400 },
                       { ssx: 14, ssy: 0, duration: 400 }]);
+        this.stuckCounter = null;
     };
 
     Heart.prototype = {
@@ -375,6 +376,7 @@
                                 heartsindanger++;
                             }
                             this.stuck = true;
+                            this.stuckCounter = getTimeStamp();
                         }
                     }
                 }
@@ -409,6 +411,34 @@
             else
             {
                 this.spriteStuck.render(ctx, this.x, this.y );
+                if ( this.stuckCounter !== null ) {
+                    var now = getTimeStamp();
+                    if ( now - this.stuckCounter > 16000 ) {
+                        var text = '0';
+                        if ( now - this.stuckCounter > 21000 ) {
+                            text = '0';
+                            this.isDead = true;
+                            heartsindanger--;
+                        }
+                        if ( now - this.stuckCounter > 20000 ) {
+                            text = '1';
+                        }
+                        else if ( now - this.stuckCounter > 19000 ) {
+                            text = '2';
+                        }
+                        else if ( now - this.stuckCounter > 18000 ) {
+                            text = '3';
+                        }
+                        else if ( now - this.stuckCounter > 17000 ) {
+                            text = '4';
+                        }
+                        else if ( now - this.stuckCounter > 16000 ) {
+                            text = '5';
+                        }
+                        ctx.fillStyle = '#fff';
+                        ctx.fillText( text, this.x + 5, this.y - 10 );
+                    }
+                }
             }
         }
     };
@@ -574,7 +604,6 @@
                 break;
             // wind duck
             case 3:
-                console.log('here');
                 this.haveAttacked = false;
                 this.changeDirection = false;
                 this.hopHeight = 0;
@@ -1095,6 +1124,7 @@
         this.dY = -1;
         this.isPassthrough = {};
         this.flagged = false;
+        this.state = 'a'; //alive
 
         switch ( this.type ) {
             // whirlwind
@@ -1147,80 +1177,109 @@
     };
 
     Thingee.prototype = {
-        update: function( player ) {
-            // 0 lifespan = doesn't expire
-            if ( this.lifespan > 0 ) {
-                var now = getTimeStamp();
-                if ( now - this.spawnTime > this.lifespan ) {
-                    this.isDead = true;
-                    if ( this.flagged ) {
-                        this.flagged = false;
-                        icebases[12].isEmpty = true;
-                    }
-                }
-            }
-            if ( this.moveHoriz ) {
-                if ( this.goingLeft ) {
-                    if (this.velX > -this.speed) {
-                        this.velX--;
-                    }
-                } else {
-                    if (this.velX < this.speed) {
-                        this.velX++;
-                    }
-                }
-            }
-            if ( this.moveVert ) {
-                if ( this.goingUp ) {
-                    if (this.velY > -this.speed) {
-                        this.velY--;
-                    }
-                } else {
-                    if (this.velY < this.speed) {
-                        this.velY++;
-                    }
-                }
-            }
-            this.velX *= this.friction;
-            this.velY *= this.friction;
-            this.x += this.velX;
-            this.y += this.velY;
-            this.sprite.update();
-            if ( !this.isDead ) {
-                switch ( this.type ) {
-                    // whirlwind grabs player
-                    case 1:
-                        if ( simpleColCheck( player, this ) ) {
-                            player.grabbed = true;
-                            player.x = this.x + this.fluctuatorX;
-                            player.y = this.y - 15 + this.fluctuatorY;
-                            player.jumping = true;
-                        }
-                        this.fluctuatorX += this.dX;
-                        this.fluctuatorY += this.dY;
+        update: function( player, blocks, things ) {
 
-                        if ( this.fluctuatorX < -8 || this.fluctuatorX > 8) {
-                            this.dX *= -1;
+            switch( this.state ) {
+                case 'a':
+                    // 0 lifespan = doesn't expire
+                    if ( this.lifespan > 0 ) {
+                        var now = getTimeStamp();
+                        if ( now - this.spawnTime > this.lifespan ) {
+                            this.isDead = true;
+                            if ( this.flagged ) {
+                                this.flagged = false;
+                                blocks[12].isEmpty = true;
+                            }
                         }
-                        if ( this.fluctuatorY < -20 || this.fluctuatorY > 5) {
-                            this.dY *= -1;
+                    }
+                    if ( this.moveHoriz ) {
+                        if ( this.goingLeft ) {
+                            if (this.velX > -this.speed) {
+                                this.velX--;
+                            }
+                        } else {
+                            if (this.velX < this.speed) {
+                                this.velX++;
+                            }
                         }
-                        break;
-                    // fireball
-                    case 2:
-                        break;
-                    // rock
-                    case 3:
-                        break;
-                    case 4:
-                    case 5:
-                        break;
-                }
+                    }
+                    if ( this.moveVert ) {
+                        if ( this.goingUp ) {
+                            if (this.velY > -this.speed) {
+                                this.velY--;
+                            }
+                        } else {
+                            if (this.velY < this.speed) {
+                                this.velY++;
+                            }
+                        }
+                    }
+                    this.velX *= this.friction;
+                    this.velY *= this.friction;
+                    this.x += this.velX;
+                    this.y += this.velY;
+                    this.sprite.update();
+                    if ( !this.isDead ) {
+                        switch ( this.type ) {
+                            // whirlwind grabs player
+                            case 1:
+                                if ( simpleColCheck( player, this ) ) {
+                                    player.grabbed = true;
+                                    player.x = this.x + this.fluctuatorX;
+                                    player.y = this.y - 15 + this.fluctuatorY;
+                                    player.jumping = true;
+                                }
+                                this.fluctuatorX += this.dX;
+                                this.fluctuatorY += this.dY;
 
-                // kill it if reaches edge of screen, except for iceblocks
-                if ( this.type !== 4 && (this.x < -5 || this.x > 1028 || this.y < -5 || this.y > 800 )) {
-                    this.isDead = true;
-                }
+                                if ( this.fluctuatorX < -8 || this.fluctuatorX > 8) {
+                                    this.dX *= -1;
+                                }
+                                if ( this.fluctuatorY < -20 || this.fluctuatorY > 5) {
+                                    this.dY *= -1;
+                                }
+                                break;
+                            // fireball
+                            // rock
+                            case 2:
+                            case 3:
+                                if ( simpleColCheck( player, this ) ) {
+                                    player.state = 'd';
+                                    this.isDead = true;
+                                }
+                                break;
+                            case 4:
+                                break;
+                            case 5:
+                                for(var i = 0; i < things.length; i++) {
+                                    if ( !things[i].isDead && things[i].type === 4) {
+                                        if ( simpleColCheck( this, things[i] ) ) {
+                                            things[i].state = 'd';
+                                            this.isDead = true;
+                                        }
+                                    }
+                                }
+                                break;
+                        }
+
+                        // kill it if reaches edge of screen, except for iceblocks
+                        if ( this.type !== 4 && (this.x < -5 || this.x > 1028 || this.y < -5 || this.y > 800 )) {
+                            this.isDead = true;
+                        }
+                    }
+                    break;
+                case 'd':
+                    if ( this.type === 4 ) {
+                        if ( this.flagged ) {
+                                this.flagged = false;
+                                blocks[12].isEmpty = true;
+                            }
+                    }
+                    this.y += 3;
+                    if ( this.y > 800 ) {
+                        this.isDead = true;
+                    }
+                    break;
             }
         },
         render: function(ctx){
@@ -1753,7 +1812,7 @@
 
                     for (i = 0; i < this.things.length; i++) {
                         if ( !this.things[i].isDead ) {
-                            this.things[i].update(this.player, this.iceblockbases);
+                            this.things[i].update(this.player, this.iceblockbases, this.things);
                         }
                     }
 
