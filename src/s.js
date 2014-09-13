@@ -2,7 +2,7 @@
     'use strict';
     var theGame = null;
     // globals
-    var MUTE_AUDIO = true;
+    var MUTE_AUDIO = false;
     var images = [];
 
     var PAUSE = false;
@@ -544,7 +544,7 @@
             break;
             // sand monster
             case 1:
-                this.spriteA = new Sprite( 18, 3, [ { ssx: 62, ssy: 49, duration: 500 }, { ssx: 80, ssy: 49, duration: 500 } ] );
+                this.spriteA = new Sprite( 18, 3, [ { ssx: 61, ssy: 49, duration: 500 }, { ssx: 79, ssy: 49, duration: 500 } ] );
                 this.speed = 1;
                 // down = 133
                 // up1 = 97
@@ -957,6 +957,8 @@
         reset: function(ctx) {
             this.state = 'w';
             this.isDead = false;
+            this.myblock = null;
+            this.targetbase = null;
             switch( this.type ) {
                 case 3:
                     this.x = 200;
@@ -967,6 +969,9 @@
                 case 2:
                     this.x = -50;
                     this.y = 705;
+                    break;
+                case 1:
+                    this.y = 575;
                     break;
                 case 0:
                     this.y = 251;
@@ -1122,7 +1127,7 @@
             case 4:
                 this.lifespan = 0;
                 this.speed = 1;
-                this.sprite = new Sprite( 12, 29, [ { ssx: 171, ssy: 0 } ]);
+                this.sprite = new Sprite( 12, 29, [ { ssx: 106, ssy: 0 } ]);
                 this.y = this.y - 30;
                 this.width = 24;
                 this.isPassthrough = {
@@ -1682,6 +1687,7 @@
         for(var i = 0; i < theGame.enemies.length; i++ ) {
             theGame.enemies[i].reset();
         }
+        theGame.iceblockbases[12].isEmpty = true;
     };
 
     Game.prototype = {
@@ -1720,7 +1726,13 @@
                         if ( !this.enemies[i].isDead ) {
                             this.enemies[i].update(monsterblockers, this.player, this.things, this.iceblockbases);
                             if ( simpleColCheck( this.player, this.enemies[i] ) ) {
-                                this.player.state = 'd';
+                                if ( this.enemies[i].type === 1 && (( this.enemies[i].state === 'up' && this.enemies[i].spriteB.getFrame() < 1 ) || this.enemies[i].state === 'w' )) {
+                                    // do nuthing
+                                }
+                                else
+                                {
+                                    this.player.state = 'd';
+                                }
                             }
                         }
                     }
