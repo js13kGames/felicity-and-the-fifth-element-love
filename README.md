@@ -7,3 +7,5 @@ NES style single screen platformer, inspired by Popeye, Megaman and Iceclimber
 
 As of right now, the game is REALLY hard. Didn't have time to balance the gameplay.
 
+Play the game here:
+[Click](http://madmarcel.github.io/js13k2014/index.html)
